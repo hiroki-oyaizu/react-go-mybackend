@@ -3,12 +3,17 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"react-go-mybackend/database"
 	"react-go-mybackend/internal/models"
 
 	// "log"
+
 	"net/http"
+
+	"github.com/go-chi/chi"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 func (app *application) Home(w http.ResponseWriter, r *http.Request) {
@@ -115,4 +120,97 @@ func (a *application) AllUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(res)
+}
+
+type Article struct {
+	Id    int    `json:"id"`
+	Title string `json:"title"`
+}
+
+func (a *application) GetArticle(w http.ResponseWriter, r *http.Request) {
+	db := database.Connect()
+	defer db.Close()
+	rows, err := db.Query("SELECT * FROM articles")
+	if err != nil {
+		log.Fatalf("getRows db.Query error err:%v", err)
+	}
+	only_ar := Article{}
+	var article []Article
+	for rows.Next() {
+		err := rows.Scan(&only_ar.Id, &only_ar.Title)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		article = append(article, only_ar)
+	}
+	res, err := json.Marshal(article)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(res)
+}
+
+func (a *application) PostArticle(w http.ResponseWriter, r *http.Request) {
+	// リクエストボディを解析
+	var article Article
+	err := json.NewDecoder(io.LimitReader(r.Body, 1048576)).Decode(&article)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	db := database.Connect()
+	// データベースに接続
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
+
+	// データベースにデータを挿入
+	stmt, err := db.Prepare("INSERT INTO articles (title) VALUES (?)")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(article.Title)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (app *application) GetArticleByID(w http.ResponseWriter, r *http.Request) {
+	a := &Article{}
+	db := database.Connect()
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		http.Error(w, "Missing article ID", http.StatusBadRequest)
+		return
+	}
+
+	err := db.QueryRow("SELECT id, title FROM articles WHERE id = ?", id).Scan(&a.Id, &a.Title)
+	if err != nil {
+		fmt.Fprintf(w, "Error querying database: %s", err.Error())
+		return
+	}
+
+	articleJSON, err := json.Marshal(a)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(articleJSON)
+	defer db.Close()
 }

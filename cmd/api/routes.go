@@ -3,7 +3,7 @@ package main
 import (
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/v5/middleware"
 )
 
@@ -18,5 +18,9 @@ func (app *application) routes() http.Handler {
 	mux.Get("/hello", app.checkJson)
 	mux.Get("/tweets", app.AllTweets)
 	mux.Get("/users", app.AllUser)
+	mux.Get("/article", app.GetArticle)
+	mux.Post("/article", app.PostArticle)
+	mux.Get("/article/{id}", app.GetArticleByID)
+
 	return mux
 }
