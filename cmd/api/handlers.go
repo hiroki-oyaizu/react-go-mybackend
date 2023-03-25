@@ -214,3 +214,95 @@ func (app *application) GetArticleByID(w http.ResponseWriter, r *http.Request) {
 	w.Write(articleJSON)
 	defer db.Close()
 }
+
+func (app *application) UpdateArticleByID(w http.ResponseWriter, r *http.Request) {
+	db := database.Connect()
+	defer db.Close()
+
+	var article Article
+	if err := json.NewDecoder(r.Body).Decode(&article); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	id := chi.URLParam(r, "id")
+	stmt, err := db.Prepare("UPDATE articles SET id=?, title=? WHERE id=?")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer stmt.Close()
+
+	if _, err := stmt.Exec(article.Id, article.Title, id); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprint(w, "User updated successfully.")
+}
+
+// func (app *application) DeleteArticleByID(w http.ResponseWriter, r *http.Request) {
+// 	db := database.Connect()
+// 	defer db.Close()
+
+// 	var article Article
+// 	if err := json.NewDecoder(r.Body).Decode(&article); err != nil {
+// 		http.Error(w, err.Error(), http.StatusBadRequest)
+// 		return
+// 	}
+
+// 	id := chi.URLParam(r, "id")
+// 	stmt, err := db.Prepare("UPDATE articles SET id=?, title=? WHERE id=?")
+// 	if err != nil {
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 		return
+// 	}
+// 	defer stmt.Close()
+
+// 	if _, err := stmt.Exec(article.Id, article.Title, id); err != nil {
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 		return
+// 	}
+
+// 	w.WriteHeader(http.StatusOK)
+// 	fmt.Fprint(w, "User updated successfully.")
+// }
+
+func (app *application) DeleteArticleByID(w http.ResponseWriter, r *http.Request) {
+	db := database.Connect()
+	defer db.Close()
+
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		http.Error(w, "Missing article ID", http.StatusBadRequest)
+		return
+	}
+
+	stmt, err := db.Prepare("DELETE FROM articles WHERE id=?")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer stmt.Close()
+
+	result, err := stmt.Exec(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if rowsAffected == 0 {
+		http.Error(w, "Article not found", http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprint(w, "Article deleted successfully.")
+}

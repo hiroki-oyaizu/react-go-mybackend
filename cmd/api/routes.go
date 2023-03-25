@@ -21,6 +21,7 @@ func (app *application) routes() http.Handler {
 	mux.Get("/article", app.GetArticle)
 	mux.Post("/article", app.PostArticle)
 	mux.Get("/article/{id}", app.GetArticleByID)
-
+	mux.Put("/article/{id}", app.UpdateArticleByID)
+	mux.Delete("/article/{id}", app.DeleteArticleByID)
 	return mux
 }
