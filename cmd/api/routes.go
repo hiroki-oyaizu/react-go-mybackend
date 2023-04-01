@@ -17,11 +17,13 @@ func (app *application) routes() http.Handler {
 	mux.Get("/new", app.New)
 	mux.Get("/hello", app.checkJson)
 	mux.Get("/tweets", app.AllTweets)
-	mux.Get("/users", app.AllUser)
+	// mux.Get("/users", app.AllUser)
 	mux.Get("/article", app.GetArticle)
 	mux.Post("/article", app.PostArticle)
 	mux.Get("/article/{id}", app.GetArticleByID)
 	mux.Put("/article/{id}", app.UpdateArticleByID)
 	mux.Delete("/article/{id}", app.DeleteArticleByID)
+	mux.Get("/users", app.AllGetUsers)
+	mux.Post("/users", app.PostUser)
 	return mux
 }

@@ -11,5 +11,8 @@ services:
       MYSQL_PASSWORD: "webpass"
       MYSQL_ROOT_PASSWORD: "pass"
       MYSQL_DATABASE: "go_mysql8_development"
+    volumes:
+      - db_data:/var/lib/mysql
+
 volumes:
   db_data:

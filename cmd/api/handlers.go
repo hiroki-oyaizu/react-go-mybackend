@@ -136,6 +136,7 @@ func (a *application) GetArticle(w http.ResponseWriter, r *http.Request) {
 	}
 	only_ar := Article{}
 	var article []Article
+
 	for rows.Next() {
 		err := rows.Scan(&only_ar.Id, &only_ar.Title)
 		if err != nil {
@@ -144,6 +145,7 @@ func (a *application) GetArticle(w http.ResponseWriter, r *http.Request) {
 		}
 		article = append(article, only_ar)
 	}
+
 	res, err := json.Marshal(article)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
