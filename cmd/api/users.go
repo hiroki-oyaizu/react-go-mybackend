@@ -6,6 +6,9 @@ import (
 	"io"
 	"net/http"
 	"react-go-mybackend/database"
+
+	"github.com/go-chi/chi"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type Users struct {
@@ -86,4 +89,96 @@ func (a *application) PostUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
+}
+
+func (app *application) GetDetailUser(w http.ResponseWriter, r *http.Request) {
+	u := &Users{}
+	db := database.Connect()
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		http.Error(w, "???", http.StatusBadRequest)
+		return
+	}
+
+	err := db.QueryRow("SELECT id,firstNane,lastNane,age FROM users WHERE id = ?", id).Scan(&u.Id, &u.FirstNane, &u.LastNane, &u.Age)
+
+	if err != nil {
+		fmt.Fprintf(w, "Error querying database: %s", err.Error())
+		return
+	}
+
+	usersJSON, err := json.Marshal(u)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(usersJSON)
+	defer db.Close()
+}
+
+func (app *application) DeleteUserID(w http.ResponseWriter, r *http.Request) {
+	db := database.Connect()
+	defer db.Close()
+
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		http.Error(w, "Missing article ID", http.StatusBadRequest)
+		return
+	}
+
+	stmt, err := db.Prepare("DELETE FROM users WHERE id=?")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer stmt.Close()
+
+	result, err := stmt.Exec(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if rowsAffected == 0 {
+		http.Error(w, "Article not found", http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprint(w, "Article deleted successfully.")
+}
+
+func (app *application) UpdateUser(w http.ResponseWriter, r *http.Request) {
+	db := database.Connect()
+	defer db.Close()
+	u := &Users{}
+	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	id := chi.URLParam(r, "id")
+	stmt, err := db.Prepare("UPDATE users SET id=?, firstNane=?, lastNane=?, age=? WHERE id=?")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer stmt.Close()
+
+	if _, err := stmt.Exec(u.Id, u.FirstNane, u.LastNane, u.Age, id); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprint(w, "User updated successfully.")
 }
