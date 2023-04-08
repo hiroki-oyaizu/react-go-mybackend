@@ -2,23 +2,10 @@ package database
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
-	"log"
 
 	_ "github.com/go-sql-driver/mysql"
 )
-
-type User struct {
-	ID        int
-	FirstName string
-	LastName  string
-	Age       string
-}
-
-type Tweet struct {
-	ID int
-}
 
 func Connect() *sql.DB {
 
@@ -36,44 +23,6 @@ func Connect() *sql.DB {
 	return db
 }
 
-// dbとはどのポートのSQLなのかの情報が入っている
-func GetRows(db *sql.DB) {
-	// Queryメソッド複数レコードを取得したいときに活用できます
-	rows, err := db.Query("SELECT * FROM users")
-	if err != nil {
-		log.Fatalf("getRows db.Query error err:%v", err)
-	}
-	// 最終的に閉じる
-	defer rows.Close()
-	// rows.Next()各レコードに対して操作できる
-	for rows.Next() {
-		u := &User{}
-		if err := rows.Scan(&u.ID, &u.FirstName, &u.LastName, &u.Age); err != nil {
-			log.Fatalf("getRows rows.Scan error err:%v", err)
-		}
-		fmt.Println(u)
-	}
-
-	err = rows.Err()
-	if err != nil {
-		log.Fatalf("getRows rows.Err error err:%v", err)
-	}
-}
-
-func GetSingleRow(db *sql.DB, userID int) {
-	u := &User{}
-	err := db.QueryRow("SELECT * FROM users WHERE id = ?", userID).
-		Scan(&u.ID, &u.FirstName, &u.LastName, &u.Age)
-	if errors.Is(err, sql.ErrNoRows) {
-		fmt.Println("getSingleRow no records.")
-		return
-	}
-	if err != nil {
-		log.Fatalf("getSingleRow db.QueryRow error err:%v", err)
-	}
-	fmt.Println(u)
-}
-
 func FetchRows(db *sql.DB) *sql.Rows {
 	rows, err := db.Query("SELECT * FROM users")
 	if err != nil {
@@ -81,4 +30,62 @@ func FetchRows(db *sql.DB) *sql.Rows {
 		panic(err.Error())
 	}
 	return rows
+}
+
+// CreateTableIfNotExists関数を追加
+func CreateTableIfNotExists(db *sql.DB) error {
+	// テーブルが存在しない場合に作成するクエリ
+	createTableQuery := `
+		CREATE TABLE IF NOT EXISTS users (
+			id int AUTO_INCREMENT,
+			firstNane varchar(100),
+			lastNane varchar(100),
+			age int,
+			mail varchar(255) UNIQUE,
+			password varchar(255),
+			PRIMARY KEY(id)
+		);
+	`
+
+	// クエリを実行
+	_, err := db.Exec(createTableQuery)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func CreateTweetTableIfNotExists(db *sql.DB) error {
+	createTweetsTableQuery := `
+	  CREATE TABLE IF NOT EXISTS tweets (
+		id int AUTO_INCREMENT,
+		title varchar(255),
+		content varchar(255),
+		gender ENUM('male', 'female'),
+		toggle BOOLEAN,
+		PRIMARY KEY(id)
+	  );
+	`
+
+	_, err := db.Exec(createTweetsTableQuery)
+	if err != nil {
+		return err
+	}
+
+	createTweetDaysTableQuery := `
+	  CREATE TABLE IF NOT EXISTS tweet_days (
+		id int AUTO_INCREMENT,
+		tweet_id int,
+		day ENUM('sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'),
+		PRIMARY KEY(id),
+		FOREIGN KEY (tweet_id) REFERENCES tweets(id)
+	  );
+	`
+
+	_, err = db.Exec(createTweetDaysTableQuery)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

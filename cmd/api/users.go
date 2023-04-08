@@ -16,6 +16,8 @@ type Users struct {
 	FirstNane string `json:"firstNane"`
 	LastNane  string `json:"lastNane"`
 	Age       int    `json:"age"`
+	Mail      string `json:"mail"`
+	Password  string `json:"password"`
 }
 
 func (a application) AllGetUsers(w http.ResponseWriter, r *http.Request) {
@@ -38,8 +40,7 @@ func (a application) AllGetUsers(w http.ResponseWriter, r *http.Request) {
 		// 新しいユーザー情報を格納するための変数を宣言する
 		var user Users
 		// データベースからユーザー情報をスキャンする
-		// はい、その通りです。rows.Scan()関数は、データベースから取得した行の各カラムの値を、指定した変数に代入します。この場合、rows.Scan()はuser.Id, user.FirstNane, user.LastNane, user.Ageに、データベースから取得した対応するカラムの値を代入しています。
-		err := rows.Scan(&user.Id, &user.FirstNane, &user.LastNane, &user.Age)
+		err := rows.Scan(&user.Id, &user.FirstNane, &user.LastNane, &user.Age, &user.Mail, &user.Password)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -47,11 +48,22 @@ func (a application) AllGetUsers(w http.ResponseWriter, r *http.Request) {
 		// スライスにユーザー情報を追加する
 		users = append(users, user)
 	}
+
+	// クエリ結果を閉じる
+	err = rows.Close()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// スライスをJSONに変換する
 	res, err := json.Marshal(users)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	// レスポンスヘッダーにContent-Typeを設定し、HTTPステータスコードを設定して、JSONデータを返す
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(res)
@@ -74,7 +86,7 @@ func (a *application) PostUser(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 
 	// データベースにデータを挿入
-	stmt, err := db.Prepare("INSERT INTO users (firstNane, lastNane, age) VALUES (?, ?, ?)")
+	stmt, err := db.Prepare("INSERT INTO users (firstNane, lastNane, age, mail, password) VALUES (?, ?, ?, ?, ?)")
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -82,7 +94,7 @@ func (a *application) PostUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(user.FirstNane, user.LastNane, user.Age)
+	_, err = stmt.Exec(user.FirstNane, user.LastNane, user.Age, user.Mail, user.Password)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

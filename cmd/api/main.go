@@ -21,6 +21,16 @@ func init() {
 	} else {
 		fmt.Println("データベース接続成功")
 	}
+
+	err = database.CreateTableIfNotExists(db)
+	if err != nil {
+		log.Fatalf("Failed to create table: %v", err)
+	}
+
+	err = database.CreateTweetTableIfNotExists(db)
+	if err != nil {
+		log.Fatalf("Failed to create table: %v", err)
+	}
 }
 
 type application struct {
@@ -39,23 +49,4 @@ func main() {
 	}
 }
 
-// func getRows(db *sql.DB) {
-// 	rows, err := db.Query("SELECT * FROM users")
-// 	if err != nil {
-// 		log.Fatalf("getRows db.Query error err:%v", err)
-// 	}
-// 	defer rows.Close()
-
-// 	for rows.Next() {
-// 		u := &database.User{}
-// 		if err := rows.Scan(&u.ID, &u.FirstName, &u.LastName, &u.Age); err != nil {
-// 			log.Fatalf("getRows rows.Scan error err:%v", err)
-// 		}
-// 		fmt.Println(u)
-// 	}
-
-// 	err = rows.Err()
-// 	if err != nil {
-// 		log.Fatalf("getRows rows.Err error err:%v", err)
-// 	}
-// }
+// 関数を作って
