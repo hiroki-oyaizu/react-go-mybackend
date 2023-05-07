@@ -17,7 +17,6 @@ func (app *application) routes() http.Handler {
 	mux.Get("/new", app.New)
 	mux.Get("/hello", app.checkJson)
 	mux.Get("/tweets", app.AllTweets)
-	// mux.Get("/users", app.AllUser)
 	mux.Get("/article", app.GetArticle)
 	mux.Post("/article", app.PostArticle)
 	mux.Get("/article/{id}", app.GetArticleByID)
@@ -30,5 +29,8 @@ func (app *application) routes() http.Handler {
 	mux.Put("/users/{id}", app.UpdateUser)
 	mux.Post("/tweets/new", app.PostTweet)
 	mux.Post("/login", app.LoginUser)
+
+	mux.Get("/tweet", app.AllGetTweet)
+	mux.Post("/tweet/new", app.CrateTweet)
 	return mux
 }

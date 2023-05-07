@@ -11,13 +11,21 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+// 誕生日情報の構造体
+type Birthday struct {
+	Year  *int `json:"year"`
+	Month *int `json:"month"`
+	Day   *int `json:"day"`
+}
 type Users struct {
-	Id        int    `json:"id"`
-	FirstNane string `json:"firstNane"`
-	LastNane  string `json:"lastNane"`
-	Age       int    `json:"age"`
-	Mail      string `json:"mail"`
-	Password  string `json:"password"`
+	Id           int      `json:"id"`
+	FirstName    string   `json:"firstName"`
+	LastName     string   `json:"lastName"`
+	Age          int      `json:"age"`
+	Mail         string   `json:"mail"`
+	Password     string   `json:"password"`
+	ProfileImage *string  `json:"profileImage"`
+	Birthday     Birthday `json:"birthday"`
 }
 
 func (a application) AllGetUsers(w http.ResponseWriter, r *http.Request) {
@@ -37,15 +45,20 @@ func (a application) AllGetUsers(w http.ResponseWriter, r *http.Request) {
 
 	// ループを使用して、すべてのユーザー情報をスキャンし、スライスに追加する
 	for rows.Next() {
-		// 新しいユーザー情報を格納するための変数を宣言する
 		var user Users
-		// データベースからユーザー情報をスキャンする
-		err := rows.Scan(&user.Id, &user.FirstNane, &user.LastNane, &user.Age, &user.Mail, &user.Password)
+		var profileImageBytes []byte // この行を for ループ内に移動
+		err := rows.Scan(&user.Id, &user.FirstName, &user.LastName, &user.Age, &user.Mail, &user.Password, &user.Birthday.Year, &user.Birthday.Month, &user.Birthday.Day, &profileImageBytes)
+
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		// スライスにユーザー情報を追加する
+
+		if profileImageBytes != nil {
+			profileImage := string(profileImageBytes)
+			user.ProfileImage = &profileImage
+		}
+
 		users = append(users, user)
 	}
 
@@ -70,15 +83,21 @@ func (a application) AllGetUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *application) PostUser(w http.ResponseWriter, r *http.Request) {
+	// Content-Type をチェック
+	fmt.Println("Received Content-Type:", r.Header.Get("Content-Type"))
+	if r.Header.Get("Content-Type") != "application/json" {
+		http.Error(w, "Content-Type must be application/json", http.StatusBadRequest)
+		return
+	}
 	var user Users
 	err := json.NewDecoder(io.LimitReader(r.Body, 1048576)).Decode(&user)
 	if err != nil {
+
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	db := database.Connect()
 	// データベースに接続
-
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -86,15 +105,17 @@ func (a *application) PostUser(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 
 	// データベースにデータを挿入
-	stmt, err := db.Prepare("INSERT INTO users (firstNane, lastNane, age, mail, password) VALUES (?, ?, ?, ?, ?)")
+	stmt, err := db.Prepare("INSERT INTO users (firstName, lastName, age, mail, password, profileImage, year, month, day) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
 
 	if err != nil {
+
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(user.FirstNane, user.LastNane, user.Age, user.Mail, user.Password)
+	_, err = stmt.Exec(user.FirstName, user.LastName, user.Age, user.Mail, user.Password, user.ProfileImage, user.Birthday.Year, user.Birthday.Month, user.Birthday.Day)
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -112,7 +133,7 @@ func (app *application) GetDetailUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := db.QueryRow("SELECT id,firstNane,lastNane,age FROM users WHERE id = ?", id).Scan(&u.Id, &u.FirstNane, &u.LastNane, &u.Age)
+	err := db.QueryRow("SELECT id,firstName,lastName,age,profileImage FROM users WHERE id = ?", id).Scan(&u.Id, &u.FirstName, &u.LastName, &u.Age)
 
 	if err != nil {
 		fmt.Fprintf(w, "Error querying database: %s", err.Error())
@@ -179,14 +200,14 @@ func (app *application) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	id := chi.URLParam(r, "id")
-	stmt, err := db.Prepare("UPDATE users SET id=?, firstNane=?, lastNane=?, age=? WHERE id=?")
+	stmt, err := db.Prepare("UPDATE users SET id=?, firstName=?, lastName=?, age=?,profileImage=? WHERE id=?")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer stmt.Close()
 
-	if _, err := stmt.Exec(u.Id, u.FirstNane, u.LastNane, u.Age, id); err != nil {
+	if _, err := stmt.Exec(u.Id, u.FirstName, u.LastName, u.Age, u.ProfileImage, id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

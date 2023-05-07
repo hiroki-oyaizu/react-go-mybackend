@@ -36,15 +36,19 @@ func FetchRows(db *sql.DB) *sql.Rows {
 func CreateTableIfNotExists(db *sql.DB) error {
 	// テーブルが存在しない場合に作成するクエリ
 	createTableQuery := `
-		CREATE TABLE IF NOT EXISTS users (
-			id int AUTO_INCREMENT,
-			firstNane varchar(100),
-			lastNane varchar(100),
-			age int,
-			mail varchar(255) UNIQUE,
-			password varchar(255),
-			PRIMARY KEY(id)
-		);
+	CREATE TABLE IF NOT EXISTS users (
+		id int AUTO_INCREMENT,
+		firstName varchar(100),
+		lastName varchar(100),
+		age int,
+		mail varchar(255) UNIQUE,
+		password varchar(255),
+		profileImage LONGTEXT,
+		year int,
+		month int,
+		day int,
+		PRIMARY KEY(id)
+	);	
 	`
 
 	// クエリを実行
@@ -57,32 +61,16 @@ func CreateTableIfNotExists(db *sql.DB) error {
 
 func CreateTweetTableIfNotExists(db *sql.DB) error {
 	createTweetsTableQuery := `
-	  CREATE TABLE IF NOT EXISTS tweets (
-		id int AUTO_INCREMENT,
-		title varchar(255),
-		content varchar(255),
-		gender ENUM('male', 'female'),
-		toggle BOOLEAN,
-		PRIMARY KEY(id)
-	  );
-	`
-
+  CREATE TABLE IF NOT EXISTS tweets (
+    id int AUTO_INCREMENT,
+    tweet_content varchar(255),
+    image text,
+    user_id int,
+    PRIMARY KEY(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+`
 	_, err := db.Exec(createTweetsTableQuery)
-	if err != nil {
-		return err
-	}
-
-	createTweetDaysTableQuery := `
-	  CREATE TABLE IF NOT EXISTS tweet_days (
-		id int AUTO_INCREMENT,
-		tweet_id int,
-		day ENUM('sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'),
-		PRIMARY KEY(id),
-		FOREIGN KEY (tweet_id) REFERENCES tweets(id)
-	  );
-	`
-
-	_, err = db.Exec(createTweetDaysTableQuery)
 	if err != nil {
 		return err
 	}

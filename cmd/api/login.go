@@ -6,6 +6,10 @@ import (
 	"io"
 	"net/http"
 	"react-go-mybackend/database"
+	"strconv"
+	"time"
+
+	"github.com/dgrijalva/jwt-go"
 )
 
 type LoginInfo struct {
@@ -25,7 +29,8 @@ func (a *application) LoginUser(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 
 	var userID int
-	err = db.QueryRow("SELECT id FROM users WHERE mail = ? AND password = ?", loginInfo.Mail, loginInfo.Password).Scan(&userID)
+	var firstName, lastName string
+	err = db.QueryRow("SELECT id, firstName, lastName FROM users WHERE mail = ? AND password = ?", loginInfo.Mail, loginInfo.Password).Scan(&userID, &firstName, &lastName)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			http.Error(w, "Invalid email or password", http.StatusUnauthorized)
@@ -35,5 +40,28 @@ func (a *application) LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"id":        userID,
+		"email":     loginInfo.Mail,
+		"firstName": firstName,
+		"lastName":  lastName,
+		"exp":       time.Now().Add(time.Hour * 24).Unix(),
+	})
+
+	secretKey := "your_secret_key"
+	signedToken, err := token.SignedString([]byte(secretKey))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"token":     signedToken,
+		"userId":    strconv.Itoa(userID), // 追加
+		"firstName": firstName,
+		"lastName":  lastName,
+	})
+
 }
