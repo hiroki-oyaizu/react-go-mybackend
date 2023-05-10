@@ -77,3 +77,22 @@ func CreateTweetTableIfNotExists(db *sql.DB) error {
 
 	return nil
 }
+
+func CreateFollowTableIfNotExists(db *sql.DB) error {
+	createFollowTableQuery := `
+	 CREATE TABLE IF NOT EXISTS follows (
+		 id int AUTO_INCREMENT,
+		 user_id int,
+		 follow_user_id int,
+		 PRIMARY KEY(id),
+		 FOREIGN KEY (user_id) REFERENCES users(id),
+		 FOREIGN KEY (follow_user_id) REFERENCES users(id)
+		 );
+	`
+	_, err := db.Exec(createFollowTableQuery)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

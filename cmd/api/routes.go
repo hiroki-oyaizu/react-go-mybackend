@@ -32,5 +32,7 @@ func (app *application) routes() http.Handler {
 
 	mux.Get("/tweet", app.AllGetTweet)
 	mux.Post("/tweet/new", app.CrateTweet)
+
+	mux.Post("/follow/new", app.CreateFollow)
 	return mux
 }
