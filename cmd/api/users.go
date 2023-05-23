@@ -11,6 +11,17 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+type Data struct {
+	Name    string    `json:"name"`
+	Age     int       `json:"age"`
+	Hobbies []Hobbies `json:"hobbies"`
+}
+
+type Hobbies struct {
+	Name     string `json:"name"`
+	Selected bool   `json:"selected"`
+}
+
 // 誕生日情報の構造体
 type Birthday struct {
 	Year  *int `json:"year"`
@@ -132,8 +143,7 @@ func (app *application) GetDetailUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "???", http.StatusBadRequest)
 		return
 	}
-
-	err := db.QueryRow("SELECT id,firstName,lastName,age,profileImage FROM users WHERE id = ?", id).Scan(&u.Id, &u.FirstName, &u.LastName, &u.Age)
+	err := db.QueryRow("SELECT id,firstName,lastName,age,profileImage ,year,month,day,mail FROM users WHERE id = ?", id).Scan(&u.Id, &u.FirstName, &u.LastName, &u.Age, &u.ProfileImage, &u.Birthday.Year, &u.Birthday.Month, &u.Birthday.Day, &u.Mail)
 
 	if err != nil {
 		fmt.Fprintf(w, "Error querying database: %s", err.Error())
@@ -145,7 +155,6 @@ func (app *application) GetDetailUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(usersJSON)
@@ -200,14 +209,14 @@ func (app *application) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	id := chi.URLParam(r, "id")
-	stmt, err := db.Prepare("UPDATE users SET id=?, firstName=?, lastName=?, age=?,profileImage=? WHERE id=?")
+	stmt, err := db.Prepare("UPDATE users SET id=?, firstName=?, lastName=?, age=?, mail=?, password=?,  profileImage=?, year=?, month=?, day=?  WHERE id=?")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer stmt.Close()
 
-	if _, err := stmt.Exec(u.Id, u.FirstName, u.LastName, u.Age, u.ProfileImage, id); err != nil {
+	if _, err := stmt.Exec(u.Id, u.FirstName, u.LastName, u.Age, u.Mail, u.Password, u.ProfileImage, u.Birthday.Year, u.Birthday.Month, u.Birthday.Year, id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

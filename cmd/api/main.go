@@ -31,6 +31,7 @@ func init() {
 	if err != nil {
 		log.Fatalf("Failed to create table: %v", err)
 	}
+
 }
 
 type application struct {

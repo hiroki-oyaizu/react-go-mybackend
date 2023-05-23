@@ -96,3 +96,23 @@ func CreateFollowTableIfNotExists(db *sql.DB) error {
 
 	return nil
 }
+
+// いいねを誰がしたかを管理するLikesテーブルがなかったら作成する関数
+func CreateLikesTableNotExists(db *sql.DB) error {
+	createLikesTableQuery := `
+		CREATE TABLE NOT EXISTS Likes(
+			id int AUTO_INCREMENT,
+			user_id int
+			like_user_id int,
+			PRIMARY KEY(id),
+			FOREIGN KEY (user_id) REFERENCES users(id),
+			FOREIGN KEY (like_user_id) REFERENCES users(id)
+		)
+	`
+
+	_, err := db.Exec(createLikesTableQuery)
+	if err != nil {
+		return err
+	}
+	return nil
+}
