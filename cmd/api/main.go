@@ -31,6 +31,18 @@ func init() {
 	if err != nil {
 		log.Fatalf("Failed to create table: %v", err)
 	}
+	err = database.CreateFollowTableIfNotExists(db)
+	if err != nil {
+		log.Fatalf("Failed to create table: %v", err)
+	}
+	err = database.CreateLikesTableNotExists(db)
+	if err != nil {
+		log.Fatalf("Failed to create table: %v", err)
+	}
+	err = database.CreateCommentsTableNotExists(db)
+	if err != nil {
+		log.Fatalf("Failed to create table: %v", err)
+	}
 
 }
 

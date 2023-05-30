@@ -2,37 +2,11 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"react-go-mybackend/database"
 	"strconv"
 )
-
-type Date struct {
-	UserName  string  `json:"username"`
-	Email     string  `json:"email"`
-	Is_active bool    `json:"is_active"`
-	Profile   Profile `json:"profile"`
-}
-
-type Profile struct {
-	First_name string         `json:"first_name"`
-	Last_name  string         `json:"last_name"`
-	Age        int            `json:"age"`
-	Location   Location       `json:"location"`
-	Social     []Social_links `json:"social_links"`
-}
-
-type Location struct {
-	Country string `json:"country"`
-	City    string `json:"city"`
-}
-
-type Social_links struct {
-	Platform string `json:"platform"`
-	Handle   string `json:"handle"`
-}
 
 type Follow struct {
 	Id           int `json:"id"`
@@ -50,8 +24,7 @@ func (a *application) CreateFollow(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}
-	fmt.Println(follow.UserId)
-	fmt.Println(follow.FollowUserId)
+
 	// Validate the request body
 	if follow.UserId == 0 || follow.FollowUserId == 0 {
 		http.Error(w, "Invalid user id or follow user id", http.StatusBadRequest)

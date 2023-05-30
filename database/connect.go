@@ -100,17 +100,34 @@ func CreateFollowTableIfNotExists(db *sql.DB) error {
 // いいねを誰がしたかを管理するLikesテーブルがなかったら作成する関数
 func CreateLikesTableNotExists(db *sql.DB) error {
 	createLikesTableQuery := `
-		CREATE TABLE NOT EXISTS Likes(
-			id int AUTO_INCREMENT,
-			user_id int
-			like_user_id int,
-			PRIMARY KEY(id),
-			FOREIGN KEY (user_id) REFERENCES users(id),
-			FOREIGN KEY (like_user_id) REFERENCES users(id)
-		)
-	`
+	CREATE TABLE IF NOT EXISTS Likes (
+		id int AUTO_INCREMENT PRIMARY KEY,
+		user_id int,
+		tweet_id int,
+		FOREIGN KEY (user_id) REFERENCES users(id),
+		FOREIGN KEY (tweet_id) REFERENCES tweets(id)
+	);
+`
 
 	_, err := db.Exec(createLikesTableQuery)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func CreateCommentsTableNotExists(db *sql.DB) error {
+	createCommentsTableQuery := `
+	CREATE TABLE IF NOT EXISTS comments (
+		id int AUTO_INCREMENT PRIMARY KEY,
+		user_id int NOT NULL,
+		tweet_id int NOT NULL,
+		comment varchar(255) NOT NULL,
+		FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+		FOREIGN KEY (tweet_id) REFERENCES tweets(id) ON DELETE CASCADE
+	);
+		`
+	_, err := db.Exec(createCommentsTableQuery)
 	if err != nil {
 		return err
 	}

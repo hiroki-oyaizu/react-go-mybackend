@@ -25,3 +25,31 @@ aaa
 
 ステータスコードを返す
 レスポンスライターに書き込む
+フォロー機能を作りたいです
+この場合どのようなカラムが必要ですか？
+followsテーブルを作りuser_id1の人がuser_id4の人をお気に入りすると考えた場合どうしますか？
+テーブルのカラムイメージです。
+id | user_id |  ????ここがわかりません|
+1  |   1     |          4          |
+
+のようなイメージです。
+
+
+
+Likeテーブル
+
+
+いいねを保存するテーブルと関数
+id  user_id tweet_id 
+
+
+
+
+
+いいねの数を返す関数
+Likeテーブルのtweet_idの全てを取得してSQLでカウントを取得する
+取得したカウントの数をフロントに返す
+
+func CreateLikeTableNotExists(db *sql.DB){
+  createLikesTableQuery := ``
+}
