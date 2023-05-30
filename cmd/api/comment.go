@@ -16,6 +16,10 @@ type Comment struct {
 	Comment string `json:"comment"`
 }
 
+type Comments struct {
+	Comments []Comment `json:"comments"`
+}
+
 func (a *application) CreateComment(w http.ResponseWriter, r *http.Request) {
 	var comment Comment
 	err := json.NewDecoder(io.LimitReader(r.Body, 1048576)).Decode(&comment)
